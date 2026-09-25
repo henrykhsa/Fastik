@@ -1,0 +1,29 @@
+name: Deploy Fastik to Oracle Cloud
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Executing remote SSH deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/Fastik
+            
+            # Atualiza o código
+            git fetch origin main
+            git reset --hard origin/main
+            
+            # Rebuild e restart de todos os containers (app + postgres + redis)
+            # As migrations rodam automaticamente no CMD do Dockerfile
+            docker compose up -d --build
+            
+            # Limpa imagens antigas para não encher o disco
+            docker image prune -f

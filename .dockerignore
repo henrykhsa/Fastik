@@ -1,0 +1,17 @@
+# NÃO copiar o node_modules local para a imagem — o Dockerfile já roda
+# `bun install` e gera o node_modules correto lá dentro. Copiar o local por
+# cima causa conflito (ex: '@nestjs/bullmq' com estrutura divergente) e quebra
+# o COPY . . com "cannot replace to directory ... with file".
+node_modules
+dist
+.env
+.env.*
+!.env.example
+
+# Metadados / dev
+.git
+.gitignore
+.github
+*.md
+docs
+test

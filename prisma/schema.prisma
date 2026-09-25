@@ -1,0 +1,145 @@
+// Fastik - Motor de Inteligência Logística (Headless API)
+// Backend puro: recebe pedidos, calcula frete, gera PINs, notifica via webhook
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// TENANT (Loja / Operação)
+// ============================================================
+
+model Store {
+  id            String   @id @default(uuid())
+  externalPmsId String   @unique @map("external_pms_id")
+  name          String
+  apiKey        String   @unique @map("api_key")
+  webhookUrl    String   @map("webhook_url")
+  lat           Float?
+  lng           Float?
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relações
+  deliveryZones DeliveryZone[]
+  orders        Order[]
+  webhookLogs   WebhookLog[]
+
+  @@map("stores")
+}
+
+// ============================================================
+// ZONAS DE ENTREGA (Frete por Região)
+// ============================================================
+
+model DeliveryZone {
+  id                   String   @id @default(uuid())
+  storeId              String   @map("store_id")
+  store                Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name                 String
+  fee                  Float
+  estimatedTimeMinutes Int      @map("estimated_time_minutes")
+  maxRadiusKm          Float    @map("max_radius_km")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@index([storeId])
+  @@map("delivery_zones")
+}
+
+// ============================================================
+// PEDIDO (Order — Fato Central)
+// ============================================================
+
+model Order {
+  id                  String                @id @default(uuid())
+  externalId          String                @map("external_id")
+  storeId             String                @map("store_id")
+  store               Store                 @relation(fields: [storeId], references: [id])
+  status              OrderStatus           @default(RECEIVED)
+
+  // Triple Handshake PINs
+  storePin            String                @map("store_pin")
+  courierPin          String                @map("courier_pin")
+  clientPin           String                @map("client_pin")
+
+  // Frete e endereço
+  deliveryFee         Float                 @map("delivery_fee")
+  clientAddress       Json                  @map("client_address")
+
+  // Fault tracking
+  faultType           FaultType?            @map("fault_type")
+
+  // Item unavailability policy
+  onItemUnavailable   ItemUnavailablePolicy @default(CANCEL_ORDER) @map("on_item_unavailable")
+
+  // Payload dos itens
+  itemsPayload        Json?                 @map("items_payload")
+
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+
+  @@unique([storeId, externalId])
+  @@index([storeId])
+  @@index([status])
+  @@map("orders")
+}
+
+// ============================================================
+// WEBHOOK LOG (Auditoria de notificações)
+// ============================================================
+
+model WebhookLog {
+  id           String   @id @default(uuid())
+  storeId      String   @map("store_id")
+  store        Store    @relation(fields: [storeId], references: [id])
+  orderId      String?  @map("order_id")
+  event        String
+  payload      Json
+  httpStatus   Int?     @map("http_status")
+  attempt      Int      @default(1)
+  success      Boolean  @default(false)
+  errorMessage String?  @map("error_message")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([storeId])
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("webhook_logs")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum OrderStatus {
+  RECEIVED
+  ACCEPTED
+  AWAITING_CHANGE
+  READY
+  DISPATCHED
+  DELIVERED
+  CANCELLED
+  REJECTED
+  FAILED_DELIVERY
+  AWAITING_RETURN_DECISION
+  RETURNING
+  DISCARDED
+}
+
+enum FaultType {
+  STORE_FAULT
+  COURIER_FAULT
+  CLIENT_FAULT
+}
+
+enum ItemUnavailablePolicy {
+  CANCEL_ITEM
+  CANCEL_ORDER
+}
