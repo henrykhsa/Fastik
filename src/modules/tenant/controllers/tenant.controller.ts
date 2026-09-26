@@ -2,6 +2,7 @@ import { Controller, Post, Body, UseGuards, HttpCode, HttpStatus } from '@nestjs
 import { ApiTags, ApiOperation, ApiHeader, ApiResponse } from '@nestjs/swagger';
 import { TenantService } from '../services/tenant.service';
 import { ProvisionTenantDto } from '../dto/provision-tenant.dto';
+import { DeprovisionTenantDto } from '../dto/deprovision-tenant.dto';
 import { BootstrapTokenGuard } from '../guards/bootstrap-token.guard';
 
 @ApiTags('Tenants')
@@ -41,5 +42,38 @@ export class TenantController {
   @ApiResponse({ status: 403, description: 'Bootstrap token já utilizado' })
   provision(@Body() dto: ProvisionTenantDto) {
     return this.tenantService.provision(dto);
+  }
+
+  @Post('deprovision')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(BootstrapTokenGuard)
+  @ApiOperation({
+    summary: 'Desprovisionar loja (tenant) no motor logístico',
+    description:
+      'Desativa uma loja: apaga as zonas de entrega e zera coordenadas/isActive, ' +
+      'PRESERVANDO o histórico de pedidos (a loja não é removida). ' +
+      'Idempotente. Protegido por Bootstrap Token.',
+  })
+  @ApiHeader({
+    name: 'x-bootstrap-token',
+    description: 'Token de ativação de uso único para provisionamento',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Loja desprovisionada (ou inexistente — idempotente)',
+    schema: {
+      example: {
+        found: true,
+        storeId: 'uuid',
+        externalPmsId: 'laurus-store-001',
+        deletedZones: 3,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Bootstrap token ausente ou inválido' })
+  @ApiResponse({ status: 403, description: 'Bootstrap token não configurado' })
+  deprovision(@Body() dto: DeprovisionTenantDto) {
+    return this.tenantService.deprovision(dto.externalPmsId);
   }
 }

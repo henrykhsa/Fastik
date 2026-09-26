@@ -12,6 +12,13 @@ export interface ProvisionResult {
   deliveryZonesCount: number;
 }
 
+export interface DeprovisionResult {
+  found: boolean;
+  storeId?: string;
+  externalPmsId?: string;
+  deletedZones?: number;
+}
+
 @Injectable()
 export class TenantService {
   private readonly logger = new Logger(TenantService.name);
@@ -116,6 +123,45 @@ export class TenantService {
       externalPmsId: store.externalPmsId,
       isNewStore: true,
       deliveryZonesCount: dto.deliveryZones?.length ?? 0,
+    };
+  }
+
+  /**
+   * Desprovisiona uma loja (tenant) no motor logístico.
+   *
+   * Usado quando o Laurus DESATIVA o delivery: apaga as zonas de entrega e
+   * zera as coordenadas/isActive da loja, PRESERVANDO o histórico de pedidos
+   * (a linha Store NÃO é removida — Order->Store é onDelete:Restrict).
+   *
+   * Idempotente: se a loja não existe, retorna { found: false } sem lançar erro.
+   */
+  async deprovision(externalPmsId: string): Promise<DeprovisionResult> {
+    const store = await this.prisma.store.findUnique({
+      where: { externalPmsId },
+    });
+
+    if (!store) {
+      return { found: false };
+    }
+
+    const { count: deletedZones } = await this.prisma.deliveryZone.deleteMany({
+      where: { storeId: store.id },
+    });
+
+    await this.prisma.store.update({
+      where: { id: store.id },
+      data: { isActive: false, lat: null, lng: null },
+    });
+
+    this.logger.log(
+      `Tenant deprovisioned: ${store.name} (${store.externalPmsId}) — ${deletedZones} zones removed`,
+    );
+
+    return {
+      found: true,
+      storeId: store.id,
+      externalPmsId: store.externalPmsId,
+      deletedZones,
     };
   }
 
