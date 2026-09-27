@@ -302,6 +302,15 @@ export class OrderService {
       throw new NotFoundException('Order not found');
     }
 
-    return order;
+    // Fonte única da verdade do timeout de aceitação: o Fastik. A loja
+    // (Laurus) só consome a data-limite já calculada — mudar o timeout aqui
+    // reflete em todas as lojas sem tocar no PMS.
+    const timeoutMinutes =
+      this.config.get<number>('app.delivery.orderAcceptTimeoutMinutes') ?? 5;
+    const acceptDeadline = new Date(
+      order.createdAt.getTime() + timeoutMinutes * 60 * 1000,
+    ).toISOString();
+
+    return { ...order, acceptDeadline };
   }
 }
