@@ -42,7 +42,18 @@ export class OrderController {
   }
 
   @Get()
-  async findAll(@Req() req: any, @Query('status') status?: string) {
+  async findAll(
+    @Req() req: any,
+    @Query('status') status?: string,
+    @Query('active') active?: string,
+  ) {
+    // Aceita tanto `?active=true` quanto `?status=active` para retornar
+    // apenas pedidos não-terminais (usado pela reconciliação PULL).
+    const wantsActive =
+      active === 'true' || active === '1' || status === 'active';
+    if (wantsActive) {
+      return this.orderService.findAll(req.store.id, { active: true });
+    }
     return this.orderService.findAll(req.store.id, { status });
   }
 

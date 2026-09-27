@@ -9,6 +9,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/common/prisma/prisma.service';
+import { TERMINAL_ORDER_STATUSES } from '@/common/constants';
 import { WebhookService } from '@/modules/webhook/services/webhook.service';
 import { CreateOrderDto, OnItemUnavailable } from '../dto/create-order.dto';
 import {
@@ -283,7 +284,20 @@ export class OrderService {
     return result;
   }
 
-  async findAll(storeId: string, filters?: { status?: string }) {
+  async findAll(storeId: string, filters?: { status?: string; active?: boolean }) {
+    // Filtro por status ativo (não-terminal): usado pela reconciliação PULL.
+    // Precede o filtro de status único — se `active` vier, ignoramos `status`
+    // (a menos que status === 'active', tratado no controller como active=true).
+    if (filters?.active) {
+      return this.prisma.order.findMany({
+        where: {
+          storeId,
+          status: { notIn: [...TERMINAL_ORDER_STATUSES] as any },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+
     return this.prisma.order.findMany({
       where: {
         storeId,
