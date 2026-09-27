@@ -36,7 +36,8 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - '5432:5432'
+      # localhost-only: túnel SSH acessa; internet não. O app usa a rede Docker.
+      - '127.0.0.1:5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -50,7 +51,8 @@ services:
     container_name: fastik-redis
     restart: always
     ports:
-      - '6379:6379'
+      # localhost-only: Redis é interno (fila BullMQ), nunca exposto na internet.
+      - '127.0.0.1:6379:6379'
     volumes:
       - redis_data:/data
     healthcheck:
