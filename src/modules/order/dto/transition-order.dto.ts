@@ -1,15 +1,27 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { DeliveryMode } from './create-order.dto';
 
 export class DispatchOrderDto {
-  @ApiProperty({ description: 'PIN to validate dispatch handshake' })
+  @ApiPropertyOptional({ description: 'PIN to validate dispatch handshake (required for PLATFORM/legacy)' })
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  pin: string;
+  pin?: string;
 
-  @ApiProperty({ enum: ['store', 'courier'], description: 'Who is providing the PIN' })
+  @ApiPropertyOptional({ enum: ['store', 'courier'], description: 'Who is providing the PIN (required for PLATFORM/legacy)' })
+  @IsOptional()
   @IsEnum(['store', 'courier'])
-  source: 'store' | 'courier';
+  source?: 'store' | 'courier';
+
+  @ApiPropertyOptional({
+    enum: DeliveryMode,
+    description:
+      'STORE = a loja entrega (dispensa courierPin). PLATFORM/ausente = handshake de PIN normal.',
+  })
+  @IsOptional()
+  @IsEnum(DeliveryMode)
+  deliveryMode?: DeliveryMode;
 }
 
 export class DeliverOrderDto {

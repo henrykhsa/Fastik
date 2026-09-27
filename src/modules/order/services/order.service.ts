@@ -93,6 +93,7 @@ export class OrderService {
         deliveryFee: dto.deliveryFee,
         itemsPayload: dto.itemsPayload ?? undefined,
         onItemUnavailable: dto.onItemUnavailable ?? OnItemUnavailable.CANCEL_ORDER,
+        deliveryMode: dto.deliveryMode ?? undefined,
         status: 'RECEIVED',
         storePin,
         courierPin,
@@ -118,7 +119,9 @@ export class OrderService {
   }
 
   async accept(storeId: string, orderId: string) {
-    const result = await this.transitionStatus(orderId, storeId, ['RECEIVED'], 'ACCEPTED');
+    const result = await this.transitionStatus(orderId, storeId, ['RECEIVED'], 'ACCEPTED', {
+      acceptedAt: new Date(),
+    });
     await this.disarmTimeout(orderId);
     await this.webhookService.notifyStatusChange(storeId, orderId, 'ACCEPTED');
     return result;
@@ -207,18 +210,27 @@ export class OrderService {
       );
     }
 
-    // Double Handshake: store sends courierPin OR courier sends storePin
-    const isValid =
-      (dto.source === 'store' && dto.pin === order.courierPin) ||
-      (dto.source === 'courier' && dto.pin === order.storePin);
+    // Modo de entrega: STORE = a loja entrega ela mesma (sem courier, dispensa
+    // o handshake de PIN). PLATFORM ou legado (ausente) mantém o Double Handshake.
+    const deliveryMode = dto.deliveryMode ?? (order.deliveryMode as any) ?? undefined;
 
-    if (!isValid) {
-      throw new BadRequestException('Invalid PIN for dispatch');
+    if (deliveryMode !== 'STORE') {
+      // Double Handshake: store sends courierPin OR courier sends storePin
+      const isValid =
+        (dto.source === 'store' && dto.pin === order.courierPin) ||
+        (dto.source === 'courier' && dto.pin === order.storePin);
+
+      if (!isValid) {
+        throw new BadRequestException('Invalid PIN for dispatch');
+      }
     }
 
     const result = await this.prisma.order.update({
       where: { id: orderId },
-      data: { status: 'DISPATCHED' },
+      data: {
+        status: 'DISPATCHED',
+        ...(dto.deliveryMode ? { deliveryMode: dto.deliveryMode } : {}),
+      },
     });
     await this.webhookService.notifyStatusChange(storeId, orderId, 'DISPATCHED');
     return result;

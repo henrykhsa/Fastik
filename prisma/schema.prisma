@@ -82,6 +82,10 @@ model Order {
   // Payload dos itens
   itemsPayload        Json?                 @map("items_payload")
 
+  // Aceite e modo de entrega
+  acceptedAt          DateTime?             @map("accepted_at")
+  deliveryMode        DeliveryMode?         @map("delivery_mode")
+
   createdAt           DateTime              @default(now()) @map("created_at")
   updatedAt           DateTime              @updatedAt @map("updated_at")
 
@@ -142,4 +146,9 @@ enum FaultType {
 enum ItemUnavailablePolicy {
   CANCEL_ITEM
   CANCEL_ORDER
+}
+
+enum DeliveryMode {
+  STORE
+  PLATFORM
 }

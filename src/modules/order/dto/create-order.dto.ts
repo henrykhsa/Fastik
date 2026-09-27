@@ -35,6 +35,11 @@ export enum OnItemUnavailable {
   CANCEL_ORDER = 'CANCEL_ORDER',
 }
 
+export enum DeliveryMode {
+  STORE = 'STORE',
+  PLATFORM = 'PLATFORM',
+}
+
 export class CreateOrderDto {
   @ApiProperty({ description: 'External order ID from the store platform' })
   @IsString()
@@ -63,4 +68,13 @@ export class CreateOrderDto {
   @IsOptional()
   @IsEnum(OnItemUnavailable)
   onItemUnavailable?: OnItemUnavailable = OnItemUnavailable.CANCEL_ORDER;
+
+  @ApiPropertyOptional({
+    enum: DeliveryMode,
+    description:
+      'Modo de entrega. Pedidos de plataforma podem chegar com PLATFORM; pedidos de menu definem no dispatch. Nulo se ausente.',
+  })
+  @IsOptional()
+  @IsEnum(DeliveryMode)
+  deliveryMode?: DeliveryMode;
 }
