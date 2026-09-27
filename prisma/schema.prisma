@@ -59,6 +59,7 @@ model DeliveryZone {
 
 model Order {
   id                  String                @id @default(uuid())
+  orderNumber         Int?                  @unique @map("order_number")
   externalId          String                @map("external_id")
   storeId             String                @map("store_id")
   store               Store                 @relation(fields: [storeId], references: [id])
