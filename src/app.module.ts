@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { BullModule } from '@nestjs/bullmq';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -7,10 +8,12 @@ import { TenantModule } from './modules/tenant/tenant.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { OrderModule } from './modules/order/order.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
+
 import appConfig from './config/app.config';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig],
