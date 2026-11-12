@@ -10,7 +10,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ApiHeader, ApiTags } from '@nestjs/swagger';
+import { ApiHeader, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { StoreApiKeyGuard } from '@/modules/delivery/guards/store-api-key.guard';
 import { OrderService } from '../services/order.service';
 import { CreateOrderDto } from '../dto/create-order.dto';
@@ -39,6 +39,13 @@ export class OrderController {
       dto.externalId = idempotencyKey;
     }
     return this.orderService.create(req.store.id, dto);
+  }
+
+  @Post('sweep-dispatched')
+
+  @ApiOperation({ summary: 'Forçar conclusão de pedidos antigos travados em rota' })
+  async sweepStuckDispatchedOrders(@Req() req: any) {
+    return this.orderService.sweepStuckDispatchedOrders(req.store.id);
   }
 
   @Get()
