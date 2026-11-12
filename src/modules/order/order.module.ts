@@ -5,6 +5,7 @@ import { WebhookModule } from '@/modules/webhook/webhook.module';
 import { OrderController } from './controllers/order.controller';
 import { OrderService } from './services/order.service';
 import { OrderTimeoutProcessor } from './processors/order-timeout.processor';
+import { OrderAutoDeliverProcessor } from './processors/order-auto-deliver.processor';
 
 @Module({
   imports: [
@@ -13,9 +14,12 @@ import { OrderTimeoutProcessor } from './processors/order-timeout.processor';
     BullModule.registerQueue({
       name: 'order-timeout',
     }),
+    BullModule.registerQueue({
+      name: 'order-auto-deliver',
+    }),
   ],
   controllers: [OrderController],
-  providers: [OrderService, OrderTimeoutProcessor],
+  providers: [OrderService, OrderTimeoutProcessor, OrderAutoDeliverProcessor],
   exports: [OrderService],
 })
 export class OrderModule {}

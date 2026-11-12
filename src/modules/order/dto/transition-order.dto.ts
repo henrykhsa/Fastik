@@ -25,7 +25,7 @@ export class DispatchOrderDto {
 }
 
 export class DeliverOrderDto {
-  @ApiProperty({ description: 'Client PIN to confirm delivery' })
+  @ApiProperty({ description: 'Client PIN to confirm delivery (only the customer knows it)' })
   @IsString()
   @IsNotEmpty()
   clientPin: string;

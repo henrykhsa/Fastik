@@ -38,5 +38,10 @@ export default registerAs('app', () => ({
       process.env.ORDER_ACCEPT_TIMEOUT_MINUTES || '5',
       10,
     ),
+    // Pedido "Em rota" sem código do cliente é concluído sozinho após este prazo.
+    autoDeliverAfterMinutes: parseInt(
+      process.env.AUTO_DELIVER_AFTER_MINUTES || '180',
+      10,
+    ),
   },
 }));

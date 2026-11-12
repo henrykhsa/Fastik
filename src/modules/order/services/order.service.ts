@@ -26,6 +26,7 @@ export class OrderService {
     private readonly config: ConfigService,
     private readonly webhookService: WebhookService,
     @InjectQueue('order-timeout') private readonly timeoutQueue: Queue,
+    @InjectQueue('order-auto-deliver') private readonly autoDeliverQueue: Queue,
   ) {}
 
   private generatePin(): string {
@@ -39,6 +40,33 @@ export class OrderService {
     const job = await this.timeoutQueue.getJob(`timeout-${orderId}`);
     if (job) {
       await job.remove();
+    }
+  }
+
+  /**
+   * Agenda a conclusão automática: se o pedido seguir "Em rota" por
+   * AUTO_DELIVER_AFTER_MINUTES (padrão 180 = 3 h), o sistema o conclui.
+   */
+  private async armAutoDeliver(orderId: string, storeId: string) {
+    const minutes = this.config.get<number>('app.delivery.autoDeliverAfterMinutes') ?? 180;
+    await this.autoDeliverQueue.add(
+      'auto-deliver',
+      { orderId, storeId },
+      {
+        delay: minutes * 60 * 1000,
+        jobId: `auto-deliver-${orderId}`,
+        removeOnComplete: true,
+        removeOnFail: 100,
+      },
+    );
+  }
+
+  private async disarmAutoDeliver(orderId: string) {
+    try {
+      const job = await this.autoDeliverQueue.getJob(`auto-deliver-${orderId}`);
+      if (job) await job.remove();
+    } catch {
+      // best-effort: o processor também confere o status antes de concluir
     }
   }
 
@@ -233,6 +261,8 @@ export class OrderService {
       },
     });
     await this.webhookService.notifyStatusChange(storeId, orderId, 'DISPATCHED');
+    // Em rota: agenda a conclusão automática caso ninguém informe o código do cliente.
+    await this.armAutoDeliver(orderId, storeId);
     return result;
   }
 
@@ -260,6 +290,7 @@ export class OrderService {
       data: { status: 'DELIVERED' },
     });
     await this.webhookService.notifyStatusChange(storeId, orderId, 'DELIVERED');
+    await this.disarmAutoDeliver(orderId);
     return result;
   }
 
@@ -270,6 +301,7 @@ export class OrderService {
     await this.webhookService.notifyStatusChange(storeId, orderId, 'FAILED_DELIVERY', {
       faultType: dto.faultType,
     });
+    await this.disarmAutoDeliver(orderId);
     return result;
   }
 
