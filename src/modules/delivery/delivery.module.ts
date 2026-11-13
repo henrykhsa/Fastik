@@ -6,6 +6,6 @@ import { StoreApiKeyGuard } from './guards/store-api-key.guard';
 @Module({
   controllers: [DeliveryController],
   providers: [DeliveryService, StoreApiKeyGuard],
-  exports: [DeliveryService],
+  exports: [DeliveryService, StoreApiKeyGuard],
 })
 export class DeliveryModule {}

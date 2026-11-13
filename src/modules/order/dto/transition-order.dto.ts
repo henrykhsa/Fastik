@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { DeliveryMode } from './create-order.dto';
+import { IsBoolean } from 'class-validator';
 
 export class DispatchOrderDto {
   @ApiPropertyOptional({ description: 'PIN to validate dispatch handshake (required for PLATFORM/legacy)' })
@@ -56,5 +57,6 @@ export class ReturnDecisionDto {
 
 export class ResolveChangeDto {
   @ApiProperty({ description: 'Whether the change was accepted by the client' })
+  @IsBoolean()
   accepted!: boolean;
 }

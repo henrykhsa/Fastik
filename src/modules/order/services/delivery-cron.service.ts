@@ -27,9 +27,9 @@ export class DeliveryCronService {
       for (const store of activeStores) {
         try {
           const result = await this.orderService.sweepStuckDispatchedOrders(store.id);
-          if (result.queuedCount > 0) {
+          if (result.updatedCount > 0) {
             this.logger.warn(
-              `Loja ${store.id}: ${result.queuedCount} pedidos presos em rota foram enfileirados para conclusão.`,
+              `Loja ${store.id}: ${result.updatedCount} pedidos presos em rota foram enfileirados para conclusão.`,
             );
           }
         } catch (err) {
