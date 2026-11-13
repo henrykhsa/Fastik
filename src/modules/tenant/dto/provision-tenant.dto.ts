@@ -14,36 +14,36 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 export class DeliveryZoneDto {
   @ApiProperty({ description: 'Nome da zona (ex: "Área 1", "Centro")' })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'Taxa de entrega (R$)' })
   @IsNumber()
   @Min(0)
-  fee: number;
+  fee!: number;
 
   @ApiProperty({ description: 'Prazo estimado de entrega (minutos)' })
   @IsInt()
   @Min(1)
-  estimatedTimeMinutes: number;
+  estimatedTimeMinutes!: number;
 
   @ApiProperty({ description: 'Raio máximo da zona em km a partir da loja' })
   @IsNumber()
   @Min(0.1)
-  maxRadiusKm: number;
+  maxRadiusKm!: number;
 }
 
 export class ProvisionTenantDto {
   @ApiProperty({ description: 'ID da loja no Laurus PMS' })
   @IsString()
-  externalPmsId: string;
+  externalPmsId!: string;
 
   @ApiProperty({ description: 'Nome da loja' })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({ description: 'URL para receber webhooks de atualização de status' })
   @IsUrl({ require_tld: false })
-  webhookUrl: string;
+  webhookUrl!: string;
 
   @ApiPropertyOptional({ description: 'Latitude da loja' })
   @IsOptional()

@@ -5,5 +5,5 @@ export class DeprovisionTenantDto {
   @ApiProperty({ description: 'ID da loja no Laurus PMS' })
   @IsString()
   @IsNotEmpty()
-  externalPmsId: string;
+  externalPmsId!: string;
 }

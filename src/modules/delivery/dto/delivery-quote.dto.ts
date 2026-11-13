@@ -6,11 +6,11 @@ export class DeliveryQuoteDto {
   @IsNumber()
   @Min(-90)
   @Max(90)
-  clientLatitude: number;
+  clientLatitude!: number;
 
   @ApiProperty({ description: 'Longitude do cliente', example: -46.6620 })
   @IsNumber()
   @Min(-180)
   @Max(180)
-  clientLongitude: number;
+  clientLongitude!: number;
 }

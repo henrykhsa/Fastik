@@ -5,10 +5,10 @@ import { AuthService } from '../services/auth.service';
 
 class GenerateTokenDto {
   @IsString()
-  sub: string;
+  sub!: string;
 
   @IsIn(['client', 'courier', 'store', 'admin'])
-  role: 'client' | 'courier' | 'store' | 'admin';
+  role!: 'client' | 'courier' | 'store' | 'admin';
 }
 
 @ApiTags('Auth')

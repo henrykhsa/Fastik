@@ -14,15 +14,15 @@ export class ClientAddressDto {
   @ApiProperty()
   @IsString()
   @IsNotEmpty()
-  address: string;
+  address!: string;
 
   @ApiProperty()
   @IsNumber()
-  lat: number;
+  lat!: number;
 
   @ApiProperty()
   @IsNumber()
-  lng: number;
+  lng!: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -44,17 +44,17 @@ export class CreateOrderDto {
   @ApiProperty({ description: 'External order ID from the store platform' })
   @IsString()
   @IsNotEmpty()
-  externalId: string;
+  externalId!: string;
 
   @ApiProperty({ type: ClientAddressDto })
   @IsObject()
   @ValidateNested()
   @Type(() => ClientAddressDto)
-  clientAddress: ClientAddressDto;
+  clientAddress!: ClientAddressDto;
 
   @ApiProperty({ description: 'Taxa de entrega em reais (R$), ex: 5.00 — mesma unidade do fee retornado por /delivery/quote' })
   @IsNumber()
-  deliveryFee: number;
+  deliveryFee!: number;
 
   @ApiPropertyOptional({ description: 'Items payload (free-form JSON)' })
   @IsOptional()

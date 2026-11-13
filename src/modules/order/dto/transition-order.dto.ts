@@ -28,7 +28,7 @@ export class DeliverOrderDto {
   @ApiProperty({ description: 'Client PIN to confirm delivery (only the customer knows it)' })
   @IsString()
   @IsNotEmpty()
-  clientPin: string;
+  clientPin!: string;
 }
 
 export enum FaultType {
@@ -40,7 +40,7 @@ export enum FaultType {
 export class FailDeliveryDto {
   @ApiProperty({ enum: FaultType, description: 'Who is at fault for the failed delivery' })
   @IsEnum(FaultType)
-  faultType: FaultType;
+  faultType!: FaultType;
 }
 
 export enum ReturnDecision {
@@ -51,10 +51,10 @@ export enum ReturnDecision {
 export class ReturnDecisionDto {
   @ApiProperty({ enum: ReturnDecision, description: 'Decision on what to do with the package' })
   @IsEnum(ReturnDecision)
-  decision: ReturnDecision;
+  decision!: ReturnDecision;
 }
 
 export class ResolveChangeDto {
   @ApiProperty({ description: 'Whether the change was accepted by the client' })
-  accepted: boolean;
+  accepted!: boolean;
 }
