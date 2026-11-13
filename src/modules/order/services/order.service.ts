@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomBytes } from 'crypto';
@@ -21,6 +22,8 @@ import {
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new Logger(OrderService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
@@ -71,13 +74,9 @@ export class OrderService {
   }
 
   async sweepStuckDispatchedOrders(storeId: string) {
-    // Busca o limite de tempo configurado (padrão 180 min / 3h)
     const minutes = this.config.get<number>('app.delivery.autoDeliverAfterMinutes') ?? 180;
-    
-    // Calcula a data/hora limite (tudo atualizado antes disso está travado)
     const thresholdDate = new Date(Date.now() - minutes * 60 * 1000);
 
-    // Busca os pedidos da loja que estão 'Em rota' há muito tempo
     const stuckOrders = await this.prisma.order.findMany({
       where: {
         storeId,
@@ -86,22 +85,31 @@ export class OrderService {
       },
     });
 
-    // Enfileira cada pedido travado para a conclusão automática imediata
+    let updatedCount = 0;
+    
+    // Forçando a alteração direta no banco de dados
     for (const order of stuckOrders) {
-      await this.autoDeliverQueue.add(
-        'auto-deliver',
-        { orderId: order.id, storeId: order.storeId },
-        {
-          jobId: `auto-deliver-sweep-${order.id}`, // Sufixo diferente para evitar conflito com jobs antigos
-          removeOnComplete: true,
-          removeOnFail: 100,
-        },
-      );
+      await this.prisma.order.update({
+        where: { id: order.id },
+        data: { status: 'DELIVERED' },
+      });
+
+      // Dispara o webhook direto para avisar a Laurus sobre a conclusão
+      try {
+        await this.webhookService.notifyStatusChange(storeId, order.id, 'DELIVERED', {
+          reason: 'AUTO_DELIVER_TIMEOUT_FORCED',
+        });
+      } catch (err) {
+        // Try-catch evita que um erro de rede no webhook quebre o loop inteiro
+        this.logger.error(`Falha ao notificar webhook do pedido ${order.id}`);
+      }
+      
+      updatedCount++;
     }
 
     return { 
-      message: 'Varredura concluída', 
-      queuedCount: stuckOrders.length 
+      message: 'Varredura forçada concluída com sucesso', 
+      updatedCount 
     };
   }
 
